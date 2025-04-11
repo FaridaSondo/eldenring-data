@@ -1,0 +1,149 @@
+---
+title: "Elden Ring Reviews (Final Project)"
+author: "Albert Selby"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(treemap)
+library(tidytext)
+library(tm)
+library(wordcloud2)
+```
+
+```{r import/view}
+library(readr)
+reviews <- read_csv("elden_ring_steam_reviews.csv")
+view(reviews)
+```
+
+```{r random graphs 1}
+reviews %>% 
+  group_by(voted_up)%>%
+  mutate(avg = mean(author_playtime_forever)) %>%
+  ggplot(aes(x = voted_up))+
+  geom_bar()+
+  labs(y = "Number of Players",
+       x = "Gave Positive Review")
+
+reviews %>% 
+  ggplot(aes(x = voted_up))+
+  geom_bar()+
+  labs(y = "Number of Players",
+       x = "Gave Positive Review")
+
+```
+```{r word count code}
+reviews <- reviews %>%
+  mutate(word_count = sapply(strsplit(reviews$review, ""), length))
+```
+
+```{r random graphs 2}
+reviews %>% 
+  filter(author_playtime_at_review < 100000 & word_count > 10) %>%
+  ggplot(aes(x = author_playtime_at_review, y = word_count, color = voted_up, size = author_num_games_owned))+
+  geom_point()+
+  labs(title = 'Word Count vs Playtime w/ Bubble Size')
+
+reviews %>% 
+  filter(word_count > 10 & author_num_games_owned < 3000) %>%
+  ggplot(aes(x = author_num_games_owned, y = word_count, color = voted_up))+
+  geom_point()+
+  labs(title = 'Games Owned vs Word Count')
+
+reviews %>% 
+  filter(word_count >2) %>%
+  ggplot(aes(x = word_count))+
+  geom_density()+
+  labs(title = 'Word Count Density')
+
+reviews %>%
+  ggplot(aes(x = author_playtime_at_review, y = author_playtime_forever))+
+  geom_point()+
+  labs(title = 'Playtime at Review vs. Playtime All Time')
+
+reviews %>%
+  ggplot(aes(x = author_playtime_forever, y = author_num_games_owned))+
+  geom_point()+
+  labs(title = 'Playtime vs. Num Games owned')
+
+reviews %>%
+  ggplot(aes(x = author_playtime_last_two_weeks, y = word_count))+
+  geom_point()+
+  labs(title = 'Playtime (Two Weeks) vs. Word Count')
+
+reviews %>%
+  ggplot(aes(x = created))+
+  geom_freqpoly(binwidth = 86400)+
+  labs(title = 'Time vs. Num Reviews')
+
+reviews %>%
+  filter(author_last_played > '2023-02-01 00:00:00')%>%
+  ggplot(aes(x = author_last_played))+
+  geom_freqpoly(binwidth = 86400)
+
+
+treemap(reviews,
+        index = 'voted_up',
+        vSize = 'author_playtime_at_review')
+  
+reviews %>% 
+  filter(author_playtime_at_review < 100000 & author_num_games_owned < 4000) %>%
+  ggplot(aes(x = author_playtime_at_review, y = author_num_games_owned, size = word_count))+
+  geom_point()
+```
+```{r density/count}
+reviews %>%
+  filter(author_playtime_at_review < 1000)%>%
+  ggplot(aes(x = author_playtime_at_review))+
+  geom_freqpoly(color = 'navy',
+                binwidth = 10)
+
+reviews %>%
+  filter(author_playtime_at_review < 1000)%>%
+  ggplot(aes(x = author_playtime_at_review))+
+  geom_density(color = 'navy',
+               fill = 'navy')
+
+reviews %>%
+  filter(word_count < 20) %>%
+  ggplot(aes(x = word_count))+
+  geom_freqpoly(color = 'navy',
+                binwidth = 1)
+
+reviews %>%
+  #filter(word_count < 20) %>%
+  ggplot(aes(x = word_count))+
+  geom_density(color = 'navy',
+               fill = 'navy')
+```
+```{r wordcloud attemps}
+word_freq <- sort(table(unlist(strsplit(reviews$review, " "))),
+               decreasing = TRUE)
+
+word_freq2 <- word_freq%>%
+  as.data.frame()
+  
+word_freq2 %>%
+  filter(Freq > 500) %>%
+  treemap(index = 'Var1',
+          vSize = 'Freq')
+
+word_freq %>%
+  as.data.frame()%>%
+  filter(Freq > 500) %>%
+  ggplot(aes(y = Var1, x = Freq))+
+  geom_point()+
+  geom_segment(aes(y = Var1, yend = Var1, x = 0, xend = Freq))
+
+word_freq2 %>%
+  as.data.frame()%>%
+  filter(Var1 != top100commonWords) %>%
+  wordcloud2(size = 1.3)
+  
+view("top100commonWords")
+```
+
