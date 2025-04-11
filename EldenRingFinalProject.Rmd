@@ -1,6 +1,6 @@
 ---
 title: "Elden Ring Reviews (Final Project)"
-author: "Albert Selby"
+author: "Albert Selby, Farida Sondo"
 date: "`r Sys.Date()`"
 output: pdf_document
 ---
